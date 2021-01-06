@@ -192,6 +192,58 @@ def handle_text_message(event):
         template_message = TemplateSendMessage(
             alt_text='Carousel alt text', template=carousel_template)
         line_bot_api.reply_message(event.reply_token, template_message)
+    elif text == 'hihi':
+        content = """
+        {
+            "type": "template",
+            "altText": "this is a carousel template",
+            "template": {
+                "type": "carousel",
+                "imageSize": "contain",
+                "columns": [
+                {
+                    "thumbnailImageUrl": "https://vos.line-scdn.net/bot-designer-template-images/coupon/happy-new-year.png",
+                    "title": "          Happy New Year",
+                    "text": "         Happy 2018 Event",
+                    "actions": [
+                    {
+                        "type": "message",
+                        "label": "New Promotion",
+                        "text": "New Year Promotion"
+                    }
+                    ]
+                },
+                {
+                    "thumbnailImageUrl": "https://vos.line-scdn.net/bot-designer-template-images/coupon/new-char-promo.png",
+                    "title": "      New Character Choco",
+                    "text": "       New Character Event",
+                    "actions": [
+                    {
+                        "type": "message",
+                        "label": "New Promotion",
+                        "text": "New Character Promotion"
+                    }
+                    ]
+                },
+                {
+                    "thumbnailImageUrl": "https://vos.line-scdn.net/bot-designer-template-images/coupon/new-open-store.png",
+                    "title": "          New Open Store",
+                    "text": "            Opening Event",
+                    "actions": [
+                    {
+                        "type": "message",
+                        "label": "New Promotion",
+                        "text": "New Store Promotion"
+                    }
+                    ]
+                }
+                ]
+            }
+        }
+        """
+        carousel_template = CarouselTemplate()
+        template_message = TemplateSendMessage( alt_text='Carousel alt text', template=carousel_template)
+        line_bot_api.reply_message(event.reply_token, template_message)
     elif text == 'image_carousel':
         image_carousel_template = ImageCarouselTemplate(columns=[
             ImageCarouselColumn(image_url='https://via.placeholder.com/1024x1024',
