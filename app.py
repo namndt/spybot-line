@@ -71,7 +71,7 @@ def callback():
     return 'OK'
 
 
-# @handler.add(MessageEvent, message=TextMessage)
+# @handler.add(MessageEvent, message=TextMessage) @namndt
 # def handle_message(event):
 #     """ Here's all the messages will be handled and processed by the program """
 #     line_bot_api.reply_message(
