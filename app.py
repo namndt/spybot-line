@@ -638,7 +638,7 @@ def handle_file_message(event):
 def handle_follow(event):
     app.logger.info("Got Follow event:" + event.source.user_id)
     line_bot_api.reply_message(
-        event.reply_token, TextSendMessage(text='Got follow event'))
+        event.reply_token, TextSendMessage(text=f'Got follow event. id {event.source.user_id}'))
 
 
 @handler.add(UnfollowEvent)
@@ -684,9 +684,8 @@ def handle_beacon(event):
 def handle_member_joined(event):
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(
-            text='Got memberJoined event. event={}'.format(
-                event)))
+        TextSendMessage(text=f'Got memberJoined event. event={event.userId}')
+    )
 
 
 @handler.add(MemberLeftEvent)
