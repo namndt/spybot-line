@@ -1,16 +1,11 @@
 import os
 import json
-import tempfile
 import datetime
-import errno
+from time import sleep
 from flask import Flask, request, abort, send_from_directory
 
-from linebot import (
-    LineBotApi, WebhookHandler
-)
-from linebot.exceptions import (
-    InvalidSignatureError
-)
+from linebot import LineBotApi, WebhookHandler
+from linebot.exceptions import InvalidSignatureError
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
     SourceUser, SourceGroup, SourceRoom,
@@ -31,26 +26,15 @@ from linebot.models import (
 
 app = Flask(__name__)
 
-line_bot_api = LineBotApi('ynjGw+rNmC6Pczzi8SStBsOY+20fEGuJgaYh/SSb2oHQGcg77nwUkEFK99jmwwgtjW9KFjoHjlMug4m+d1cwqa2qz6pctUG6v+kikb3pCHhGZRxiZMpGxBskRmEdmjrTvEbdUhVcZ8wVAKxLl3Lr2wdB04t89/1O/w1cDnyilFU=')
+LINE_BOT_API = LineBotApi('ynjGw+rNmC6Pczzi8SStBsOY+20fEGuJgaYh/SSb2oHQGcg77nwUkEFK99jmwwgtjW9KFjoHjlMug4m+d1cwqa2qz6pctUG6v+kikb3pCHhGZRxiZMpGxBskRmEdmjrTvEbdUhVcZ8wVAKxLl3Lr2wdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('6097a93cf056ffd5e504c89480c97740')  # channel secret
-
-static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
+GROUP_ID = ''
+USER_ID = ''
 
 
 @app.route('/')
 def test_app():
     return 'welcome to my chatbot hihi'
-
-
-# function for create tmp dir for download content
-def make_static_tmp_dir():
-    try:
-        os.makedirs(static_tmp_path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(static_tmp_path):
-            pass
-        else:
-            raise
 
 
 @app.route('/callback', methods=['POST'])
@@ -71,59 +55,52 @@ def callback():
     return 'OK'
 
 
-# @handler.add(MessageEvent, message=TextMessage) @namndt
-# def handle_message(event):
-#     """ Here's all the messages will be handled and processed by the program """
-#     line_bot_api.reply_message(
-#         event.reply_token,
-#         TextSendMessage(text=event.message.text))
-
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
     text = event.message.text
 
     if text == 'profile':
         if isinstance(event.source, SourceUser):
-            profile = line_bot_api.get_profile(event.source.user_id)
-            line_bot_api.reply_message(
+            profile = LINE_BOT_API.get_profile(event.source.user_id)
+            LINE_BOT_API.reply_message(
                 event.reply_token, [
                     TextSendMessage(text='Display name: ' + profile.display_name),
                     TextSendMessage(text='Status message: ' + str(profile.status_message))
                 ]
             )
         else:
-            line_bot_api.reply_message(
+            LINE_BOT_API.reply_message(
                 event.reply_token,
                 TextSendMessage(text="Bot can't use profile API without user ID"))
     elif text == 'quota':
-        quota = line_bot_api.get_message_quota()
-        line_bot_api.reply_message(
+        quota = LINE_BOT_API.get_message_quota()
+        LINE_BOT_API.reply_message(
             event.reply_token, [
                 TextSendMessage(text='type: ' + quota.type),
                 TextSendMessage(text='value: ' + str(quota.value))
             ]
         )
     elif text == 'quota_consumption':
-        quota_consumption = line_bot_api.get_message_quota_consumption()
-        line_bot_api.reply_message(
+        quota_consumption = LINE_BOT_API.get_message_quota_consumption()
+        LINE_BOT_API.reply_message(
             event.reply_token, [
                 TextSendMessage(text='total usage: ' + str(quota_consumption.total_usage)),
             ]
         )
     elif text == 'push':
-        line_bot_api.push_message(
+        LINE_BOT_API.push_message(
             event.source.user_id, [
                 TextSendMessage(text='PUSH!'),
             ]
         )
     elif text == 'multicast':
-        line_bot_api.multicast(
+        LINE_BOT_API.multicast(
             [event.source.user_id], [
                 TextSendMessage(text='THIS IS A MULTICAST MESSAGE'),
             ]
         )
     elif text == 'broadcast':
-        line_bot_api.broadcast(
+        LINE_BOT_API.broadcast(
             [
                 TextSendMessage(text='THIS IS A BROADCAST MESSAGE'),
             ]
@@ -131,8 +108,8 @@ def handle_text_message(event):
     elif text.startswith('broadcast '):  # broadcast 20190505
         date = text.split(' ')[1]
         print("Getting broadcast result: " + date)
-        result = line_bot_api.get_message_delivery_broadcast(date)
-        line_bot_api.reply_message(
+        result = LINE_BOT_API.get_message_delivery_broadcast(date)
+        LINE_BOT_API.reply_message(
             event.reply_token, [
                 TextSendMessage(text='Number of sent broadcast messages: ' + date),
                 TextSendMessage(text='status: ' + str(result.status)),
@@ -141,21 +118,21 @@ def handle_text_message(event):
         )
     elif text == 'bye':
         if isinstance(event.source, SourceGroup):
-            line_bot_api.reply_message(
+            LINE_BOT_API.reply_message(
                 event.reply_token, TextSendMessage(text='Leaving group'))
-            line_bot_api.leave_group(event.source.group_id)
+            LINE_BOT_API.leave_group(event.source.group_id)
         elif isinstance(event.source, SourceRoom):
-            line_bot_api.reply_message(
+            LINE_BOT_API.reply_message(
                 event.reply_token, TextSendMessage(text='Leaving group'))
-            line_bot_api.leave_room(event.source.room_id)
+            LINE_BOT_API.leave_room(event.source.room_id)
         else:
-            line_bot_api.reply_message(
+            LINE_BOT_API.reply_message(
                 event.reply_token,
                 TextSendMessage(text="Bot can't leave from 1:1 chat"))
     elif text == 'image':
         url = request.url_root + '/static/logo.png'
         app.logger.info("url=" + url)
-        line_bot_api.reply_message(
+        LINE_BOT_API.reply_message(
             event.reply_token,
             ImageSendMessage(url, url)
         )
@@ -166,7 +143,7 @@ def handle_text_message(event):
         ])
         template_message = TemplateSendMessage(
             alt_text='Confirm alt text', template=confirm_template)
-        line_bot_api.reply_message(event.reply_token, template_message)
+        LINE_BOT_API.reply_message(event.reply_token, template_message)
     elif text == 'buttons':
         buttons_template = ButtonsTemplate(
             title='My buttons sample', text='Hello, my buttons', actions=[
@@ -177,7 +154,7 @@ def handle_text_message(event):
             ])
         template_message = TemplateSendMessage(
             alt_text='Buttons alt text', template=buttons_template)
-        line_bot_api.reply_message(event.reply_token, template_message)
+        LINE_BOT_API.reply_message(event.reply_token, template_message)
     elif text == 'carousel':
         carousel_template = CarouselTemplate(columns=[
             CarouselColumn(text='hoge1', title='fuga1', actions=[
@@ -191,7 +168,7 @@ def handle_text_message(event):
         ])
         template_message = TemplateSendMessage(
             alt_text='Carousel alt text', template=carousel_template)
-        line_bot_api.reply_message(event.reply_token, template_message)
+        LINE_BOT_API.reply_message(event.reply_token, template_message)
     elif text == 'hihi':
         content = """
         {
@@ -243,7 +220,7 @@ def handle_text_message(event):
         """
         carousel_template = CarouselTemplate()
         template_message = TemplateSendMessage( alt_text='Carousel alt text', template=carousel_template)
-        line_bot_api.reply_message(event.reply_token, template_message)
+        LINE_BOT_API.reply_message(event.reply_token, template_message)
     elif text == 'image_carousel':
         image_carousel_template = ImageCarouselTemplate(columns=[
             ImageCarouselColumn(image_url='https://via.placeholder.com/1024x1024',
@@ -257,7 +234,7 @@ def handle_text_message(event):
         ])
         template_message = TemplateSendMessage(
             alt_text='ImageCarousel alt text', template=image_carousel_template)
-        line_bot_api.reply_message(event.reply_token, template_message)
+        LINE_BOT_API.reply_message(event.reply_token, template_message)
     elif text == 'imagemap':
         pass
     elif text == 'flex':
@@ -359,7 +336,7 @@ def handle_text_message(event):
             ),
         )
         message = FlexSendMessage(alt_text="hello", contents=bubble)
-        line_bot_api.reply_message(
+        LINE_BOT_API.reply_message(
             event.reply_token,
             message
         )
@@ -490,12 +467,12 @@ def handle_text_message(event):
         }
         """
         message = FlexSendMessage(alt_text="hello", contents=json.loads(bubble_string))
-        line_bot_api.reply_message(
+        LINE_BOT_API.reply_message(
             event.reply_token,
             message
         )
     elif text == 'quick_reply':
-        line_bot_api.reply_message(
+        LINE_BOT_API.reply_message(
             event.reply_token,
             TextSendMessage(
                 text='Quick reply',
@@ -523,15 +500,15 @@ def handle_text_message(event):
                         ),
                     ])))
     elif text == 'link_token' and isinstance(event.source, SourceUser):
-        link_token_response = line_bot_api.issue_link_token(event.source.user_id)
-        line_bot_api.reply_message(
+        link_token_response = LINE_BOT_API.issue_link_token(event.source.user_id)
+        LINE_BOT_API.reply_message(
             event.reply_token, [
                 TextSendMessage(text='link_token: ' + link_token_response.link_token)
             ]
         )
     elif text == 'insight_message_delivery':
         today = datetime.date.today().strftime("%Y%m%d")
-        response = line_bot_api.get_insight_message_delivery(today)
+        response = LINE_BOT_API.get_insight_message_delivery(today)
         if response.status == 'ready':
             messages = [
                 TextSendMessage(text='broadcast: ' + str(response.broadcast)),
@@ -539,10 +516,10 @@ def handle_text_message(event):
             ]
         else:
             messages = [TextSendMessage(text='status: ' + response.status)]
-        line_bot_api.reply_message(event.reply_token, messages)
+        LINE_BOT_API.reply_message(event.reply_token, messages)
     elif text == 'insight_followers':
         today = datetime.date.today().strftime("%Y%m%d")
-        response = line_bot_api.get_insight_followers(today)
+        response = LINE_BOT_API.get_insight_followers(today)
         if response.status == 'ready':
             messages = [
                 TextSendMessage(text='followers: ' + str(response.followers)),
@@ -551,23 +528,23 @@ def handle_text_message(event):
             ]
         else:
             messages = [TextSendMessage(text='status: ' + response.status)]
-        line_bot_api.reply_message(event.reply_token, messages)
+        LINE_BOT_API.reply_message(event.reply_token, messages)
     elif text == 'insight_demographic':
-        response = line_bot_api.get_insight_demographic()
+        response = LINE_BOT_API.get_insight_demographic()
         if response.available:
             messages = ["{gender}: {percentage}".format(gender=it.gender, percentage=it.percentage)
                         for it in response.genders]
         else:
             messages = [TextSendMessage(text='available: false')]
-        line_bot_api.reply_message(event.reply_token, messages)
+        LINE_BOT_API.reply_message(event.reply_token, messages)
     else:
-        line_bot_api.reply_message(
+        LINE_BOT_API.reply_message(
             event.reply_token, TextSendMessage(text=event.message.text))
 
 
 @handler.add(MessageEvent, message=LocationMessage)
 def handle_location_message(event):
-    line_bot_api.reply_message(
+    LINE_BOT_API.reply_message(
         event.reply_token,
         LocationSendMessage(
             title='Location', address=event.message.address,
@@ -578,7 +555,7 @@ def handle_location_message(event):
 
 @handler.add(MessageEvent, message=StickerMessage)
 def handle_sticker_message(event):
-    line_bot_api.reply_message(
+    LINE_BOT_API.reply_message(
         event.reply_token,
         StickerSendMessage(
             package_id=event.message.package_id,
@@ -586,59 +563,18 @@ def handle_sticker_message(event):
     )
 
 
-# Other Message Type
-@handler.add(MessageEvent, message=(ImageMessage, VideoMessage, AudioMessage))
-def handle_content_message(event):
-    if isinstance(event.message, ImageMessage):
-        ext = 'jpg'
-    elif isinstance(event.message, VideoMessage):
-        ext = 'mp4'
-    elif isinstance(event.message, AudioMessage):
-        ext = 'm4a'
-    else:
-        return
-
-    message_content = line_bot_api.get_message_content(event.message.id)
-    with tempfile.NamedTemporaryFile(dir=static_tmp_path, prefix=ext + '-', delete=False) as tf:
-        for chunk in message_content.iter_content():
-            tf.write(chunk)
-        tempfile_path = tf.name
-
-    dist_path = tempfile_path + '.' + ext
-    dist_name = os.path.basename(dist_path)
-    os.rename(tempfile_path, dist_path)
-
-    line_bot_api.reply_message(
-        event.reply_token, [
-            TextSendMessage(text='Save content.'),
-            TextSendMessage(text=request.host_url + os.path.join('static', 'tmp', dist_name))
-        ])
-
-
-@handler.add(MessageEvent, message=FileMessage)
-def handle_file_message(event):
-    message_content = line_bot_api.get_message_content(event.message.id)
-    with tempfile.NamedTemporaryFile(dir=static_tmp_path, prefix='file-', delete=False) as tf:
-        for chunk in message_content.iter_content():
-            tf.write(chunk)
-        tempfile_path = tf.name
-
-    dist_path = tempfile_path + '-' + event.message.file_name
-    dist_name = os.path.basename(dist_path)
-    os.rename(tempfile_path, dist_path)
-
-    line_bot_api.reply_message(
-        event.reply_token, [
-            TextSendMessage(text='Save file.'),
-            TextSendMessage(text=request.host_url + os.path.join('static', 'tmp', dist_name))
-        ])
-
-
 @handler.add(FollowEvent)
 def handle_follow(event):
-    app.logger.info("Got Follow event:" + event.source.user_id)
-    line_bot_api.reply_message(
-        event.reply_token, TextSendMessage(text=f'Got follow event. id {event.source.user_id}'))
+    global USER_ID
+    USER_ID = event.source.userId
+    LINE_BOT_API.reply_message(event.reply_token, TextSendMessage(text=f'Cảm ơn bạn đã theo dõi mình'))
+    send_line(USER_ID, event.reply_token)
+
+
+def send_line(id, token):
+    for i in range(10):
+        LINE_BOT_API.reply_message(token, TextSendMessage(text=f'Tin nhắn thứ {i}'))
+        sleep(5)
 
 
 @handler.add(UnfollowEvent)
@@ -648,9 +584,9 @@ def handle_unfollow(event):
 
 @handler.add(JoinEvent)
 def handle_join(event):
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text='Joined this ' + event.source.type))
+    global GROUP_ID
+    GROUP_ID = event.source.groupId
+    LINE_BOT_API.reply_message(event.reply_token, TextSendMessage(text='Xin chào mọi người, em là Mỹ Linh, từ này em sẽ giúp mọi người khai báo nhiệt độ ạ.'))
 
 
 @handler.add(LeaveEvent)
@@ -661,19 +597,19 @@ def handle_leave():
 @handler.add(PostbackEvent)
 def handle_postback(event):
     if event.postback.data == 'ping':
-        line_bot_api.reply_message(
+        LINE_BOT_API.reply_message(
             event.reply_token, TextSendMessage(text='pong'))
     elif event.postback.data == 'datetime_postback':
-        line_bot_api.reply_message(
+        LINE_BOT_API.reply_message(
             event.reply_token, TextSendMessage(text=event.postback.params['datetime']))
     elif event.postback.data == 'date_postback':
-        line_bot_api.reply_message(
+        LINE_BOT_API.reply_message(
             event.reply_token, TextSendMessage(text=event.postback.params['date']))
 
 
 @handler.add(BeaconEvent)
 def handle_beacon(event):
-    line_bot_api.reply_message(
+    LINE_BOT_API.reply_message(
         event.reply_token,
         TextSendMessage(
             text='Got beacon event. hwid={}, device_message(hex string)={}'.format(
@@ -682,7 +618,7 @@ def handle_beacon(event):
 
 @handler.add(MemberJoinedEvent)
 def handle_member_joined(event):
-    line_bot_api.reply_message(
+    LINE_BOT_API.reply_message(
         event.reply_token,
         TextSendMessage(text=f'Got memberJoined event. event={event.userId}')
     )
@@ -700,6 +636,5 @@ def send_static_content(path):
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
-    make_static_tmp_dir()
     # app.run(host='0.0.0.0', port=port)
     app.run(host='0.0.0.0', port=port)
